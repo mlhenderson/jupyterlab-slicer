@@ -49,7 +49,7 @@ export function parseHdfQuery(path: string): IContentsParameters {
 export function hdfContentsRequest(
   parameters: IContentsParameters,
   settings: ServerConnection.ISettings
-): Promise<HdfDirectoryListing | HdfContents> {
+): Promise<any> {
   // allow the query parameters to be optional
   const { fpath, ...rest } = parameters;
 

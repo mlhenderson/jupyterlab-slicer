@@ -1,5 +1,5 @@
-// import * as Plotly from "plotly.js"
-import { Layout, PlotData, newPlot } from 'plotly.js';
+import * as Plotly from "plotly.js"
+import { PlotlyHTMLElement, Layout, PlotData, SliderStep, Slider } from 'plotly.js';
 
 import {
   Widget
@@ -7,7 +7,11 @@ import {
 
 import { ServerConnection } from "@jupyterlab/services";
 
-import { hdfDataRequest, IContentsParameters } from './hdf';
+import { 
+  hdfDataRequest, 
+  // hdfContentsRequest, 
+  IContentsParameters 
+} from './hdf';
 
 enum Plane {
   xy,
@@ -17,8 +21,10 @@ enum Plane {
 
 export default class Slicer extends Widget {
   private readonly graphDiv: HTMLDivElement;
+  private plot: PlotlyHTMLElement;
   private serverSettings: ServerConnection.ISettings;
-  // private fpath: string;
+  // relative filepath of the dataset that is currently displayed
+  private fpath: string;
   // private uri: string;
   private data: PlotData[];
   private dataX: number[];
@@ -40,41 +46,47 @@ export default class Slicer extends Widget {
       height: 700,
       xaxis: { title: 'x' },
       yaxis: { title: 'y' },
-      sliders: [{
-        pad: {t: 30},
-        currentvalue: {
-          xanchor: "right",
-          prefix: 'z-index: ',
-          font: {
-            color: '#888',
-            size: 20
-          }
-        },
-        steps: [{
-          label: 'red',
-          method: 'restyle',
-          args: ['line.color', 'red']
-        }, {
-          label: 'green',
-          method: 'restyle',
-          args: ['line.color', 'green']
-        }, {
-          label: 'blue',
-          method: 'restyle',
-          args: ['line.color', 'blue']
-        }]
-      }]
+      // sliders: [{
+      //   pad: {t: 30},
+      //   currentvalue: {
+      //     xanchor: "right",
+      //     // temp hard-coding
+      //     prefix: 'z-index: ',
+      //     font: {
+      //       color: '#888',
+      //       size: 20
+      //     }
+      //   },
+        // steps: [{
+        //   label: 'red',
+        //   method: 'restyle',
+        //   args: ['line.color', 'red']
+        // }, {
+        //   label: 'green',
+        //   method: 'restyle',
+        //   args: ['line.color', 'green']
+        // }, {
+        //   label: 'blue',
+        //   method: 'restyle',
+        //   args: ['line.color', 'blue']
+        // }]
+      // }]
     } as Layout;
 
   // temporary hard coding
   let fpath = 'datasets/laguna_del_maule_miller.h5';
   // end temporary
 
+  // this.graphDiv.on('plotly_sliderchange', (sliderData: any) => {
+  //   // this.updateSliceIndex(sliderData.)
+  //   console.log("sliderData: " + JSON.stringify(sliderData));
+  // })
+
   this.plotNewDataset(fpath);
 
   // temporary compiler fluffing
   this.updateViewingPlane(Plane.xy);
-  this.updateSliceIndex(3);
+  // this.updateSliceIndex(3);
   // end temporary
 
   }
@@ -84,18 +96,19 @@ export default class Slicer extends Widget {
   * file: xy-plane at index 0.
   */
   private async plotNewDataset(fpath: string) {
+    this.fpath = fpath;
     const paramsX: IContentsParameters = {
-      fpath: fpath,
+      fpath: this.fpath,
       uri: "x",
     }
 
     const paramsY: IContentsParameters = {
-      fpath: fpath,
+      fpath: this.fpath,
       uri: "y",
     }
 
     const paramsZ: IContentsParameters = {
-      fpath: fpath,
+      fpath: this.fpath,
       uri: "model",
       select: "[:,:,0]"
     }
@@ -112,11 +125,46 @@ export default class Slicer extends Widget {
       type: 'heatmap'
     } as PlotData];
 
-    newPlot(this.graphDiv, this.data, this.plotLayout);
+    const steps = await this.getSliderSteps();
+    const sliders = [{
+        pad: {t: 30},
+        currentvalue: {
+          xanchor: "right",
+          // temp hard-coding
+          prefix: 'z-index: ',
+          font: {
+            color: '#888',
+            size: 20
+          }
+        },
+        steps: steps,
+     }] as Partial<Slider>[]
+
+    this.plotLayout.sliders = sliders;
+
+    this.plot = await Plotly.newPlot(this.graphDiv, this.data, this.plotLayout);
+      // this.plot = await this.plotNewDataset(fpath);
+    this.plot.on('plotly_sliderchange', (sliderData: any) => {
+      this.updateSliceIndex(sliderData.slider.active);
+      console.log("sliderData: " + sliderData.slider.active.toString());
+    })
   }
 
   private async updateSliceIndex(sliceIndex: number) {
-    return 0;
+    // TODO: fix this so it uses Plotly.update
+
+    const paramsZ: IContentsParameters = {
+      fpath: this.fpath,
+      uri: "model",
+      select: `[:,:,${sliceIndex}]`
+    }
+    var z = await hdfDataRequest(paramsZ, this.serverSettings);
+    var update = {
+      z: [z] // The array we want to update must be wrapped in an array
+    };
+    Plotly.restyle(this.graphDiv, update);
+
+
   }
 
 
@@ -124,7 +172,51 @@ export default class Slicer extends Widget {
     return 0;
   }
 
-  // private async getSteps
+  private async getSliderSteps() {
+    // TODO: fix this so it's calling hdfContentsRequest and NOT
+    // hdfDataRequest
+
+    // const paramsContents: IContentsParameters = {
+    //   fpath: this.fpath,
+    //   // temp hard-coding
+    //   uri: "z"
+    // }
+    // // try...catch block needed here
+    // const meta = await hdfContentsRequest(paramsContents, this.serverSettings);
+    // const nSteps = meta.contents.shape[0];
+    // let steps = [];
+    // for (let i = 0; i < nSteps; i++) {
+    //   let step = {
+    //       value: i.toString(),
+    //       label: i.toString(),
+    //       method: 'skip', // might actually want skip here
+    //       // args: ['line.color', 'red']
+    //    } as Partial<SliderStep>
+    //    steps.push(step);
+    // }
+    // return steps;
+
+    const paramsContents: IContentsParameters = {
+      fpath: this.fpath,
+      // temp hard-coding
+      uri: "z"
+    }
+    // try...catch block needed here
+    const data = await hdfDataRequest(paramsContents, this.serverSettings);
+    const nSteps = data.length;
+    let steps = [];
+    for (let i = 0; i < nSteps; i++) {
+      let step = {
+          value: i.toString(),
+          label: i.toString(),
+          method: 'skip', // might actually want skip here
+          // args: ['line.color', 'red']
+       } as Partial<SliderStep>
+       steps.push(step);
+    }
+    return steps;
+
+  }
 }
 
   // private async getSliceData(plane: "xy" | "xz" | "yz", sliceIndex: number) {
