@@ -32,10 +32,12 @@
   },
   "dependencies": {
     "@jupyterlab/application": "^1.0.0",
+    "@jupyterlab/coreutils": "^3.2.0",
+    "@jupyterlab/services": "^4.2.0",
     "@types/node": "^12.12.5",
+    "@types/plotly.js": "^1.44.15",
     "node": "^12.13.0",
-    "plotly.js": "^1.51.0",
-    "react-plotly.js": "^2.4.0"
+    "plotly.js": "^1.51.0"
   },
   "devDependencies": {
     "rimraf": "^2.6.1",

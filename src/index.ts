@@ -22,7 +22,7 @@ function activateSlicerPlugin(app: JupyterFrontEnd, palette: ICommandPalette) {
 
   const command: string = 'slicer:open';
   app.commands.addCommand(command, {
-    label: 'Slicer',
+    label: 'Slicer-typescript',
     execute: () => {
       if (!widget.isAttached) {
         app.shell.add(widget, 'main')
