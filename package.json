@@ -1,0 +1,50 @@
+{
+  "name": "jupyterlab-slicex",
+  "version": "0.1.0",
+  "description": "slice",
+  "keywords": [
+    "jupyter",
+    "jupyterlab",
+    "jupyterlab-extension"
+  ],
+  "homepage": "https://github.com/my_name/myextension",
+  "bugs": {
+    "url": "https://github.com/my_name/myextension/issues"
+  },
+  "license": "BSD-3-Clause",
+  "author": "Jon Hays",
+  "files": [
+    "lib/**/*.{d.ts,eot,gif,html,jpg,js,js.map,json,png,svg,woff2,ttf}",
+    "style/**/*.{css,eot,gif,html,jpg,json,png,svg,woff2,ttf}"
+  ],
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "style": "style/index.css",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/my_name/myextension.git"
+  },
+  "scripts": {
+    "build": "tsc",
+    "clean": "rimraf lib && rimraf tsconfig.tsbuildinfo",
+    "prepare": "npm run clean && npm run build",
+    "watch": "tsc -w"
+  },
+  "dependencies": {
+    "@jupyterlab/application": "^1.0.0",
+    "@types/node": "^12.12.5",
+    "node": "^12.13.0",
+    "plotly.js": "^1.51.0",
+    "react-plotly.js": "^2.4.0"
+  },
+  "devDependencies": {
+    "rimraf": "^2.6.1",
+    "typescript": "~3.5.2"
+  },
+  "sideEffects": [
+    "style/*.css"
+  ],
+  "jupyterlab": {
+    "extension": true
+  }
+}
