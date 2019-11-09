@@ -7,7 +7,6 @@ import {
 } from '@jupyterlab/apputils';
 
 import Slicer from "./slicer";
-// const Slicer = require('./slicer');
 
 
 function activateSlicerPlugin(app: JupyterFrontEnd, palette: ICommandPalette) {

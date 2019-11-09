@@ -1,4 +1,5 @@
 import * as Plotly from "plotly.js"
+// import * as JSON5 from "json5"
 
 import {
   Widget
@@ -136,16 +137,13 @@ export default class Slicer extends Widget {
 
     // Define behavior for sliderchange event
     this.plot.on('plotly_sliderchange', (data: any) => {
-      // console.log("sliderdata: " + JSON.stringify(data.slider));
       this.updateSliceIndex(data.slider.active);
     });
 
     // Define behavior for dropdown change event
     this.plot.on('plotly_restyle', (data: any) => {
-      console.log("DATA: " + JSON.stringify(data));
       const sliceDim = data[0].sliceDim;
-      console.log("SLICEDIM: " + sliceDim);
-      if (sliceDim !== undefined) { //'sliceDim' in data) {
+      if (sliceDim !== undefined) {
         this.updateSliceDimension(sliceDim);
       }
     });
@@ -166,7 +164,6 @@ export default class Slicer extends Widget {
   }
 
   private async updateSliceDimension(sliceDim: Dimension) {
-    console.log("ENTERED UPDATEDIM");
     this.sliceDim = sliceDim;
     // this.sliceIndex = 0;
     // Display yz plane
@@ -199,7 +196,6 @@ export default class Slicer extends Widget {
         steps: steps
       }]
     }
-    console.log("UPDATE");
     Plotly.update(this.graphDiv, dataUpdate, layoutUpdate);
   }
 
@@ -221,8 +217,6 @@ export default class Slicer extends Widget {
       select: this.selectString(0)
     }
 
-    console.log("SELECT: " + this.selectString(0));
-
     // need a try...catch block here
     const hData = await hdfDataRequest(hParams, this.serverSettings);
     const vData = await hdfDataRequest(vParams, this.serverSettings);
@@ -233,22 +227,7 @@ export default class Slicer extends Widget {
       vData: vData,
       targetData: targetData,
     };
-    for (let i = 0; i < data.targetData.length; i++) {
-      // let d = targetData[i]
-      for (let j = 0; j < targetData[i].length; j++) {
-        if (isNaN(targetData[i][j])) {
-        targetData[i][j] = NaN;
-      }
-      }
-
-    const x = {
-      h: NaN
-    }
-    return x;
-
-    }
-    console.log("TARGET DATA: " + targetData.toString());
-    // return data;
+    return data;
   }
 
   private async getSliderSteps() {
@@ -280,7 +259,9 @@ export default class Slicer extends Widget {
       return `[:,${sliceIndex},:]`;
     }
     return `[:,:,${sliceIndex}]`;    
-    console.log("SLICEDIMsssss: " + this.sliceDim);
-    console.log("DIMZ: " + Dimension.z);
   }
+
+  // private sliders(): Partial<Slider>[] {
+  //   return undefined;
+  // }
 }
