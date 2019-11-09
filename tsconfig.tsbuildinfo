@@ -746,8 +746,8 @@
         "signature": "24fe092368b57347314b850c552da89b574340ebb2921aeeb1cab1d255da23c3"
       },
       "/users/jonhays/documents/work/uda/jupyterlab-slicedup/src/slicer.ts": {
-        "version": "0446ed06e0bf6e1d18158dcc9ef3564631a5362befb1bb6cd746d7545e410fb6",
-        "signature": "6ef1abb5b40d9cc34af751345dce6d58a71e696deb00164db77406324b3125c4"
+        "version": "d45b5671bc1216cc23af6c82c64c276f39d4920336b82466dba1c5ef401a4680",
+        "signature": "c8629a28725143f50aa642d411e3dc2b5929ea58ed08517475e02610b0f34862"
       },
       "/users/jonhays/documents/work/uda/jupyterlab-slicedup/src/index.ts": {
         "version": "6eac18622c145a7fbf90ac8646753d8b2afdf235c725caa12cc8bd0d6b99190e",
@@ -2618,85 +2618,8 @@
       "/users/jonhays/documents/work/uda/jupyterlab-slicedup/node_modules/@jupyterlab/application/lib/index.d.ts",
       "/users/jonhays/documents/work/uda/jupyterlab-slicedup/node_modules/@types/d3/index.d.ts",
       "/users/jonhays/documents/work/uda/jupyterlab-slicedup/node_modules/@types/plotly.js/index.d.ts",
-      [
-        "/users/jonhays/documents/work/uda/jupyterlab-slicedup/src/slicer.ts",
-        [
-          {
-            "file": "/users/jonhays/documents/work/uda/jupyterlab-slicedup/src/slicer.ts",
-            "start": 781,
-            "length": 10,
-            "messageText": "'sliceIndex' is declared but its value is never read.",
-            "category": 1,
-            "code": 6133,
-            "reportsUnnecessary": true
-          },
-          {
-            "file": "/users/jonhays/documents/work/uda/jupyterlab-slicedup/src/slicer.ts",
-            "start": 2412,
-            "length": 9,
-            "code": 2322,
-            "category": 1,
-            "messageText": {
-              "messageText": "Type 'Partial<PlotData>[]' is not assignable to type 'PlotData[]'.",
-              "category": 1,
-              "code": 2322,
-              "next": {
-                "messageText": "Type 'Partial<PlotData>' is not assignable to type 'PlotData'.",
-                "category": 1,
-                "code": 2322,
-                "next": {
-                  "messageText": "Property 'type' is optional in type 'Partial<PlotData>' but required in type 'PlotData'.",
-                  "category": 1,
-                  "code": 2327
-                }
-              }
-            }
-          },
-          {
-            "file": "/users/jonhays/documents/work/uda/jupyterlab-slicedup/src/slicer.ts",
-            "start": 5121,
-            "length": 10,
-            "code": 2345,
-            "category": 1,
-            "messageText": {
-              "messageText": "Argument of type '{ z: (Datum[] | Datum[][] | Int8Array | Uint8Array | Int16Array | Uint16Array | Int32Array | Uint32Array | Uint8ClampedArray | Float32Array | Float64Array | Datum[][][])[]; x: (Datum[] | ... 9 more ... | Float64Array)[]; y: (Datum[] | ... 9 more ... | Float64Array)[]; }' is not assignable to parameter of type 'Partial<PlotData>'.",
-              "category": 1,
-              "code": 2345,
-              "next": {
-                "messageText": "Types of property 'x' are incompatible.",
-                "category": 1,
-                "code": 2326,
-                "next": {
-                  "messageText": "Type '(Datum[] | Datum[][] | Int8Array | Uint8Array | Int16Array | Uint16Array | Int32Array | Uint32Array | Uint8ClampedArray | Float32Array | Float64Array)[]' is not assignable to type 'Datum[] | Datum[][] | Int8Array | Uint8Array | Int16Array | Uint16Array | Int32Array | Uint32Array | Uint8ClampedArray | Float32Array | Float64Array'.",
-                  "category": 1,
-                  "code": 2322,
-                  "next": {
-                    "messageText": "Type '(Datum[] | Datum[][] | Int8Array | Uint8Array | Int16Array | Uint16Array | Int32Array | Uint32Array | Uint8ClampedArray | Float32Array | Float64Array)[]' is not assignable to type 'Datum[]'.",
-                    "category": 1,
-                    "code": 2322,
-                    "next": {
-                      "messageText": "Type 'Datum[] | Datum[][] | Int8Array | Uint8Array | Int16Array | Uint16Array | Int32Array | Uint32Array | Uint8ClampedArray | Float32Array | Float64Array' is not assignable to type 'Datum'.",
-                      "category": 1,
-                      "code": 2322,
-                      "next": {
-                        "messageText": "Type 'Datum[]' is not assignable to type 'Datum'.",
-                        "category": 1,
-                        "code": 2322,
-                        "next": {
-                          "messageText": "Type 'Datum[]' is not assignable to type 'string'.",
-                          "category": 1,
-                          "code": 2322
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        ]
-      ],
-      "/users/jonhays/documents/work/uda/jupyterlab-slicedup/src/index.ts"
+      "/users/jonhays/documents/work/uda/jupyterlab-slicedup/src/index.ts",
+      "/users/jonhays/documents/work/uda/jupyterlab-slicedup/src/slicer.ts"
     ]
   },
   "version": "3.5.3"

@@ -36,9 +36,9 @@ export default class Slicer extends Widget {
   private hAxis: Dimension;
   private vAxis: Dimension;
   private sliceDim: Dimension;
-  private sliceIndex: number;
-  private data: PlotData[];
-  private plotLayout: Layout;
+  // private sliceIndex: number;
+  // private data: PlotData[];
+  // private plotLayout: Layout;
   
 
   constructor() {
@@ -49,12 +49,12 @@ export default class Slicer extends Widget {
 
     this.serverSettings = ServerConnection.makeSettings();
 
-    this.plotLayout = {
-      width: 700,
-      height: 700,
-      xaxis: { title: 'x' },
-      yaxis: { title: 'y' },
-    } as Layout;
+    // this.plotLayout = {
+    //   width: 700,
+    //   height: 700,
+    //   xaxis: { title: 'x' },
+    //   yaxis: { title: 'y' },
+    // } as Layout;
 
   // temporary hard coding
   const fpath = 'datasets/laguna_del_maule_miller.h5';
@@ -74,38 +74,9 @@ export default class Slicer extends Widget {
     this.vAxis = Dimension.y;
     this.sliceDim = Dimension.z;
 
-    // const hParams: IContentsParameters = {
-    //   fpath: this.fpath,
-    //   uri: this.hAxis,
-    // }
-
-    // const vParams: IContentsParameters = {
-    //   fpath: this.fpath,
-    //   uri: this.vAxis,
-    // }
-
-    // const dataParams: IContentsParameters = {
-    //   fpath: this.fpath,
-    //   uri: "model",
-    //   select: this.selectString(0)
-    // }
-
-    // // need a try...catch block here
-    // const hData = await hdfDataRequest(hParams, this.serverSettings);
-    // const vData = await hdfDataRequest(vParams, this.serverSettings);
-    // const targetData = await hdfDataRequest(dataParams, this.serverSettings);
-
-    // this.data = [{
-    //   z: targetData,
-    //   x: hData,
-    //   y: vData,
-    //   type: 'heatmap',
-    //   colorscale: 'Viridis'
-    // } as PlotData];
-
     let data = await this.getPlotData();
-    let plotData = [{
-      z: data.data.targetData,
+    const plotData = [{
+      z: data.targetData,
       x: data.hData,
       y: data.vData,
       type: 'heatmap',
@@ -113,6 +84,7 @@ export default class Slicer extends Widget {
     } as PlotData];
 
     const steps = await this.getSliderSteps();
+    // Slice index slider
     const sliders = [{
         pad: {t: 30},
         currentvalue: {
@@ -126,6 +98,7 @@ export default class Slicer extends Widget {
         steps: steps,
      }] as Partial<Slider>[]
 
+    // Dropdown buttons
     const updatemenus = [{
         y: 0.8,
         yanchor: 'top',
@@ -144,26 +117,42 @@ export default class Slicer extends Widget {
         }]
     }];
 
-    this.plotLayout.sliders = sliders;
-    this.plotLayout.updatemenus = updatemenus;
+    const plotLayout = {
+      width: 700,
+      height: 700,
+      xaxis: { title: 'x' },
+      yaxis: { title: 'y' },
+      // sliders: sliders,
+      // updatemenus: updatemenus
+    } as Layout;
 
-    this.plot = await Plotly.newPlot(this.graphDiv, this.data, this.plotLayout);
+    plotLayout.sliders = sliders;
+    plotLayout.updatemenus = updatemenus;
+
+    // this.plotLayout.sliders = sliders;
+    // this.plotLayout.updatemenus = updatemenus;
+
+    this.plot = await Plotly.newPlot(this.graphDiv, plotData, plotLayout);
 
     // Define behavior for sliderchange event
     this.plot.on('plotly_sliderchange', (data: any) => {
+      // console.log("sliderdata: " + JSON.stringify(data.slider));
       this.updateSliceIndex(data.slider.active);
     });
 
     // Define behavior for dropdown change event
     this.plot.on('plotly_restyle', (data: any) => {
-      if ('sliceDim' in data) {
-        this.updateSliceDimension(data.sliceDim);
+      console.log("DATA: " + JSON.stringify(data));
+      const sliceDim = data[0].sliceDim;
+      console.log("SLICEDIM: " + sliceDim);
+      if (sliceDim !== undefined) { //'sliceDim' in data) {
+        this.updateSliceDimension(sliceDim);
       }
     });
   }
 
   private async updateSliceIndex(sliceIndex: number) {
-    this.sliceIndex = sliceIndex;
+    // this.sliceIndex = sliceIndex;
     const dataParams: IContentsParameters = {
       fpath: this.fpath,
       uri: "model",
@@ -177,15 +166,16 @@ export default class Slicer extends Widget {
   }
 
   private async updateSliceDimension(sliceDim: Dimension) {
+    console.log("ENTERED UPDATEDIM");
     this.sliceDim = sliceDim;
-    this.sliceIndex = 0;
+    // this.sliceIndex = 0;
     // Display yz plane
-    if (sliceDim == Dimension.x) {
+    if (sliceDim === Dimension.x) {
       this.hAxis = Dimension.y;
       this.vAxis = Dimension.z;
     }
     // Display xz plane
-    else if (sliceDim == Dimension.y) {
+    else if (sliceDim === Dimension.y) {
       this.hAxis = Dimension.x;
       this.vAxis = Dimension.z;
     }
@@ -200,19 +190,21 @@ export default class Slicer extends Widget {
     let steps = await this.getSliderSteps();
 
     const dataUpdate = {
-      z: [data[0].z],
-      x: [data[0].x],
-      y: [data[0].y]
+      z: [data.targetData],
+      x: [data.hData],
+      y: [data.vData]
     }
     const layoutUpdate = {
       sliders: [{
         steps: steps
       }]
     }
+    console.log("UPDATE");
     Plotly.update(this.graphDiv, dataUpdate, layoutUpdate);
   }
 
-  private async getPlotData(): Promise<Partial<PlotData>[]> {
+  private async getPlotData(): Promise<any> {
+    console.log("ENTERED GETDATA");
     const hParams: IContentsParameters = {
       fpath: this.fpath,
       uri: this.hAxis,
@@ -229,6 +221,8 @@ export default class Slicer extends Widget {
       select: this.selectString(0)
     }
 
+    console.log("SELECT: " + this.selectString(0));
+
     // need a try...catch block here
     const hData = await hdfDataRequest(hParams, this.serverSettings);
     const vData = await hdfDataRequest(vParams, this.serverSettings);
@@ -239,7 +233,22 @@ export default class Slicer extends Widget {
       vData: vData,
       targetData: targetData,
     };
-    return data;
+    for (let i = 0; i < data.targetData.length; i++) {
+      // let d = targetData[i]
+      for (let j = 0; j < targetData[i].length; j++) {
+        if (isNaN(targetData[i][j])) {
+        targetData[i][j] = NaN;
+      }
+      }
+
+    const x = {
+      h: NaN
+    }
+    return x;
+
+    }
+    console.log("TARGET DATA: " + targetData.toString());
+    // return data;
   }
 
   private async getSliderSteps() {
@@ -263,15 +272,15 @@ export default class Slicer extends Widget {
     return steps;
   }
 
-  private selectString(sliceIndex: number) {
-    if (this.sliceDim == Dimension.x) {
-      return `[${sliceIndex},:,:]`
+  private selectString(sliceIndex: number): string {
+    if (this.sliceDim === Dimension.x) {
+      return `[${sliceIndex},:,:]`;
     }
-    if (this.sliceDim == Dimension.y) {
-      return `[:,${sliceIndex},:]`
+    if (this.sliceDim === Dimension.y) {
+      return `[:,${sliceIndex},:]`;
     }
-    if (this.sliceDim == Dimension.z) {
-      return `[:,:,${sliceIndex}]`
-    }    
+    return `[:,:,${sliceIndex}]`;    
+    console.log("SLICEDIMsssss: " + this.sliceDim);
+    console.log("DIMZ: " + Dimension.z);
   }
 }
