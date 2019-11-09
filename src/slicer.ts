@@ -1,5 +1,4 @@
 import * as Plotly from "plotly.js"
-import { PlotlyHTMLElement, Layout, PlotData, SliderStep, Slider } from 'plotly.js';
 
 import {
   Widget
@@ -8,15 +7,23 @@ import {
 import { ServerConnection } from "@jupyterlab/services";
 
 import { 
+  PlotlyHTMLElement,
+  Layout, 
+  PlotData, 
+  SliderStep, 
+  Slider 
+} from 'plotly.js';
+
+import { 
   hdfDataRequest, 
-  // hdfContentsRequest, 
+  hdfContentsRequest, 
   IContentsParameters 
 } from './hdf';
 
-enum Plane {
-  xy,
-  xz,
-  yz
+enum Dimension {
+  x = 'x',
+  y = 'y',
+  z = 'z'
 };
 
 export default class Slicer extends Widget {
@@ -26,10 +33,11 @@ export default class Slicer extends Widget {
   // relative filepath of the dataset that is currently displayed
   private fpath: string;
   // private uri: string;
+  private hAxis: Dimension;
+  private vAxis: Dimension;
+  private sliceDim: Dimension;
+  private sliceIndex: number;
   private data: PlotData[];
-  private dataX: number[];
-  private dataY: number[];
-  private dataZ: number[][];
   private plotLayout: Layout;
   
 
@@ -46,49 +54,13 @@ export default class Slicer extends Widget {
       height: 700,
       xaxis: { title: 'x' },
       yaxis: { title: 'y' },
-      // sliders: [{
-      //   pad: {t: 30},
-      //   currentvalue: {
-      //     xanchor: "right",
-      //     // temp hard-coding
-      //     prefix: 'z-index: ',
-      //     font: {
-      //       color: '#888',
-      //       size: 20
-      //     }
-      //   },
-        // steps: [{
-        //   label: 'red',
-        //   method: 'restyle',
-        //   args: ['line.color', 'red']
-        // }, {
-        //   label: 'green',
-        //   method: 'restyle',
-        //   args: ['line.color', 'green']
-        // }, {
-        //   label: 'blue',
-        //   method: 'restyle',
-        //   args: ['line.color', 'blue']
-        // }]
-      // }]
     } as Layout;
 
   // temporary hard coding
-  let fpath = 'datasets/laguna_del_maule_miller.h5';
+  const fpath = 'datasets/laguna_del_maule_miller.h5';
   // end temporary
-
-  // this.graphDiv.on('plotly_sliderchange', (sliderData: any) => {
-  //   // this.updateSliceIndex(sliderData.)
-  //   console.log("sliderData: " + JSON.stringify(sliderData));
-  // })
 
   this.plotNewDataset(fpath);
-
-  // temporary compiler fluffing
-  this.updateViewingPlane(Plane.xy);
-  // this.updateSliceIndex(3);
-  // end temporary
-
   }
 
   /*
@@ -97,32 +69,47 @@ export default class Slicer extends Widget {
   */
   private async plotNewDataset(fpath: string) {
     this.fpath = fpath;
-    const paramsX: IContentsParameters = {
-      fpath: this.fpath,
-      uri: "x",
-    }
+    // Initialize defaults
+    this.hAxis = Dimension.x;
+    this.vAxis = Dimension.y;
+    this.sliceDim = Dimension.z;
 
-    const paramsY: IContentsParameters = {
-      fpath: this.fpath,
-      uri: "y",
-    }
+    // const hParams: IContentsParameters = {
+    //   fpath: this.fpath,
+    //   uri: this.hAxis,
+    // }
 
-    const paramsZ: IContentsParameters = {
-      fpath: this.fpath,
-      uri: "model",
-      select: "[:,:,0]"
-    }
+    // const vParams: IContentsParameters = {
+    //   fpath: this.fpath,
+    //   uri: this.vAxis,
+    // }
 
-    // need a try...catch block here
-    this.dataX = await hdfDataRequest(paramsX, this.serverSettings);
-    this.dataY = await hdfDataRequest(paramsY, this.serverSettings);
-    this.dataZ = await hdfDataRequest(paramsZ, this.serverSettings);
+    // const dataParams: IContentsParameters = {
+    //   fpath: this.fpath,
+    //   uri: "model",
+    //   select: this.selectString(0)
+    // }
 
-    this.data = [{
-      z: this.dataZ,
-      x: this.dataX,
-      y: this.dataY,
-      type: 'heatmap'
+    // // need a try...catch block here
+    // const hData = await hdfDataRequest(hParams, this.serverSettings);
+    // const vData = await hdfDataRequest(vParams, this.serverSettings);
+    // const targetData = await hdfDataRequest(dataParams, this.serverSettings);
+
+    // this.data = [{
+    //   z: targetData,
+    //   x: hData,
+    //   y: vData,
+    //   type: 'heatmap',
+    //   colorscale: 'Viridis'
+    // } as PlotData];
+
+    let data = await this.getPlotData();
+    let plotData = [{
+      z: data.data.targetData,
+      x: data.hData,
+      y: data.vData,
+      type: 'heatmap',
+      colorscale: 'Viridis'
     } as PlotData];
 
     const steps = await this.getSliderSteps();
@@ -130,8 +117,7 @@ export default class Slicer extends Widget {
         pad: {t: 30},
         currentvalue: {
           xanchor: "right",
-          // temp hard-coding
-          prefix: 'z-index: ',
+          prefix: `${this.sliceDim}-index: `,
           font: {
             color: '#888',
             size: 20
@@ -140,165 +126,152 @@ export default class Slicer extends Widget {
         steps: steps,
      }] as Partial<Slider>[]
 
+    const updatemenus = [{
+        y: 0.8,
+        yanchor: 'top',
+        buttons: [{
+            method: 'restyle',
+            args: ['sliceDim', Dimension.z],
+            label: 'xy'
+        }, {
+            method: 'restyle',
+            args: ['sliceDim', Dimension.y],
+            label: 'xz'
+        }, {
+            method: 'restyle',
+            args: ['sliceDim', Dimension.x],
+            label: 'yz'
+        }]
+    }];
+
     this.plotLayout.sliders = sliders;
+    this.plotLayout.updatemenus = updatemenus;
 
     this.plot = await Plotly.newPlot(this.graphDiv, this.data, this.plotLayout);
-      // this.plot = await this.plotNewDataset(fpath);
-    this.plot.on('plotly_sliderchange', (sliderData: any) => {
-      this.updateSliceIndex(sliderData.slider.active);
-      console.log("sliderData: " + sliderData.slider.active.toString());
-    })
+
+    // Define behavior for sliderchange event
+    this.plot.on('plotly_sliderchange', (data: any) => {
+      this.updateSliceIndex(data.slider.active);
+    });
+
+    // Define behavior for dropdown change event
+    this.plot.on('plotly_restyle', (data: any) => {
+      if ('sliceDim' in data) {
+        this.updateSliceDimension(data.sliceDim);
+      }
+    });
   }
 
   private async updateSliceIndex(sliceIndex: number) {
-    // TODO: fix this so it uses Plotly.update
-
-    const paramsZ: IContentsParameters = {
+    this.sliceIndex = sliceIndex;
+    const dataParams: IContentsParameters = {
       fpath: this.fpath,
       uri: "model",
-      select: `[:,:,${sliceIndex}]`
+      select: this.selectString(sliceIndex)
     }
-    var z = await hdfDataRequest(paramsZ, this.serverSettings);
-    var update = {
-      z: [z] // The array we want to update must be wrapped in an array
+    const targetData = await hdfDataRequest(dataParams, this.serverSettings);
+    const update = {
+      z: [targetData] // The data array we want to update must be wrapped in an outer array
     };
     Plotly.restyle(this.graphDiv, update);
-
-
   }
 
+  private async updateSliceDimension(sliceDim: Dimension) {
+    this.sliceDim = sliceDim;
+    this.sliceIndex = 0;
+    // Display yz plane
+    if (sliceDim == Dimension.x) {
+      this.hAxis = Dimension.y;
+      this.vAxis = Dimension.z;
+    }
+    // Display xz plane
+    else if (sliceDim == Dimension.y) {
+      this.hAxis = Dimension.x;
+      this.vAxis = Dimension.z;
+    }
+    // Display xy plane
+    else {
+      this.hAxis = Dimension.x;
+      this.vAxis = Dimension.y;
+    }
+    // this.data = await this.getPlotData();
+    // this.plotLayout.sliders[0].steps = await this.getSliderSteps();
+    let data = await this.getPlotData();
+    let steps = await this.getSliderSteps();
 
-  private async updateViewingPlane(newPlane: Plane) {
-    return 0;
+    const dataUpdate = {
+      z: [data[0].z],
+      x: [data[0].x],
+      y: [data[0].y]
+    }
+    const layoutUpdate = {
+      sliders: [{
+        steps: steps
+      }]
+    }
+    Plotly.update(this.graphDiv, dataUpdate, layoutUpdate);
+  }
+
+  private async getPlotData(): Promise<Partial<PlotData>[]> {
+    const hParams: IContentsParameters = {
+      fpath: this.fpath,
+      uri: this.hAxis,
+    }
+
+    const vParams: IContentsParameters = {
+      fpath: this.fpath,
+      uri: this.vAxis,
+    }
+
+    const dataParams: IContentsParameters = {
+      fpath: this.fpath,
+      uri: "model",
+      select: this.selectString(0)
+    }
+
+    // need a try...catch block here
+    const hData = await hdfDataRequest(hParams, this.serverSettings);
+    const vData = await hdfDataRequest(vParams, this.serverSettings);
+    const targetData = await hdfDataRequest(dataParams, this.serverSettings);
+
+    const data = {
+      hData: hData,
+      vData: vData,
+      targetData: targetData,
+    };
+    return data;
   }
 
   private async getSliderSteps() {
-    // TODO: fix this so it's calling hdfContentsRequest and NOT
-    // hdfDataRequest
-
-    // const paramsContents: IContentsParameters = {
-    //   fpath: this.fpath,
-    //   // temp hard-coding
-    //   uri: "z"
-    // }
-    // // try...catch block needed here
-    // const meta = await hdfContentsRequest(paramsContents, this.serverSettings);
-    // const nSteps = meta.contents.shape[0];
-    // let steps = [];
-    // for (let i = 0; i < nSteps; i++) {
-    //   let step = {
-    //       value: i.toString(),
-    //       label: i.toString(),
-    //       method: 'skip', // might actually want skip here
-    //       // args: ['line.color', 'red']
-    //    } as Partial<SliderStep>
-    //    steps.push(step);
-    // }
-    // return steps;
-
     const paramsContents: IContentsParameters = {
       fpath: this.fpath,
       // temp hard-coding
-      uri: "z"
+      uri: this.sliceDim
     }
     // try...catch block needed here
-    const data = await hdfDataRequest(paramsContents, this.serverSettings);
-    const nSteps = data.length;
+    const meta = await hdfContentsRequest(paramsContents, this.serverSettings);
+    const nSteps = meta.content.shape[0];
     let steps = [];
     for (let i = 0; i < nSteps; i++) {
       let step = {
           value: i.toString(),
           label: i.toString(),
-          method: 'skip', // might actually want skip here
-          // args: ['line.color', 'red']
+          method: 'skip',
        } as Partial<SliderStep>
        steps.push(step);
     }
     return steps;
+  }
 
+  private selectString(sliceIndex: number) {
+    if (this.sliceDim == Dimension.x) {
+      return `[${sliceIndex},:,:]`
+    }
+    if (this.sliceDim == Dimension.y) {
+      return `[:,${sliceIndex},:]`
+    }
+    if (this.sliceDim == Dimension.z) {
+      return `[:,:,${sliceIndex}]`
+    }    
   }
 }
-
-  // private async getSliceData(plane: "xy" | "xz" | "yz", sliceIndex: number) {
-  //   const paramsX: IContentsParameters = {
-  //     fpath: this.fpath,
-  //     uri: "x",
-  //   }
-
-  //   const paramsY: IContentsParameters = {
-  //     fpath: this.fpath,
-  //     uri: "y",
-  //   }
-
-  //   const paramsZ: IContentsParameters = {
-  //     fpath: this.fpath,
-  //     uri: "model",
-  //     select: `[:,:,${sliceIndex.toString()}]`
-  //   }
-
-  //   this.dataX = await hdfDataRequest(paramsX, this.serverSettings);
-  //   this.dataY = await hdfDataRequest(paramsY, this.serverSettings);
-  //   this.dataZ = await hdfDataRequest(paramsZ, this.serverSettings);
-
-  //   // var dataX;
-  //   // var data
-
-  //   // hdfDataRequest(paramsX, this.serverSettings).then(data => {
-  //   //   this.dataX = data;
-  //   // });
-  //   // hdfDataRequest(paramsY, this.serverSettings).then(data => {
-  //   //   this.dataY = data;
-  //   // });
-  //   // hdfDataRequest(paramsZ, this.serverSettings).then(data => {
-  //   //   this.data = data;
-  //   //   newPlot(this.graphDiv, this.data, this.plotLayout);
-  //   // });
-
-  //   // console.log("Data z: " + this.dataZ.toString());
-
-  //   // this.data = [{
-  //   //   z: this.dataZ,
-  //   //   x: this.dataX,
-  //   //   y: this.dataY,
-  //   //   type: 'heatmap'
-  //   // } as PlotData];
-  //   this.dataX = await hdfDataRequest(paramsX, this.serverSettings);
-  //   this.dataY = await hdfDataRequest(paramsY, this.serverSettings);
-  //   this.dataZ = await hdfDataRequest(paramsZ, this.serverSettings);
-
-  //   this.data = [{
-  //   z: this.dataZ,
-  //   x: this.dataX,
-  //   y: this.dataY,
-  //   type: 'heatmap'
-  // } as PlotData];
-
-  // // update plot here
-
-  //   // hdfDataRequest(paramsX, this.serverSettings).then(data => {
-  //   //   this.dataX = data;
-  //   //   hdfDataRequest(paramsY, this.serverSettings).then(data => {
-  //   //    this.dataY = data;
-  //   //     hdfDataRequest(paramsZ, this.serverSettings).then(data => {
-  //   //       // this.dataZ = data.map((arr: any) => arr.flat());
-  //   //       this.dataZ = data;
-  //   //       this.data = [{
-  //   //       z: this.dataZ,
-  //   //       x: this.dataX,
-  //   //       y: this.dataY,
-  //   //       type: 'heatmap'
-  //   //     } as PlotData];
-  //   //     //   var plotD = [{
-  //   //     //     z: [[[1], [20], [30], [50], [1]], [[20], [1], [60], [80], [30]], [[30], [60], [1], [-10], [20]]],
-  //   //     //     x: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
-  //   //     //     y: ['Morning', 'Afternoon', 'Evening'],
-  //   //     //     type: 'heatmap'
-  //   //     // } as PlotData];
-  //   //     console.log("data: " + JSON.stringify(this.data));
-  //   //     newPlot(this.graphDiv, this.data, this.plotLayout);
-  //   // });
-  //   // });
-  //   // });
-
-
-  // }
