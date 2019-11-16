@@ -26,14 +26,14 @@ enum Dimension {
   z = 'z'
 };
 
-interface AxisData {
+interface SlicerAxisData {
   horizontal: number[];
   vertical: number[];
   normal: number[];
 };
 
 interface SlicerPlotData {
-  axis: AxisData;
+  axis: SlicerAxisData;
   slice: number[][];
 }
 
@@ -41,32 +41,44 @@ export default class Slicer extends Widget {
   private readonly graphDiv: HTMLDivElement;
   private plot: PlotlyHTMLElement;
   private serverSettings: ServerConnection.ISettings;
-  // relative filepath of the dataset that is currently displayed
   private fpath: string;
-  // private uri: string;
   private horizontalAxis: Dimension;
   private verticalAxis: Dimension;
-  // private normalAxis: Dimension;
   private normalAxis: Dimension;
   private sliceIndex: number;
-  // private data: PlotData[];
-  // private plotLayout: Layout;
+  private normalAxisData: number[];
+
+  private readonly layoutBase: Partial<Layout> = {
+    width: 700,
+    height: 600,
+    // Dropdown buttons
+    updatemenus: [{
+        y: 0.8,
+        yanchor: 'bottom',
+        pad: {r: 60}, 
+        buttons: [{
+            method: 'restyle',
+            args: ['normalAxis', Dimension.z],
+            label: 'z'
+        }, {
+            method: 'restyle',
+            args: ['normalAxis', Dimension.y],
+            label: 'y'
+        }, {
+            method: 'restyle',
+            args: ['normalAxis', Dimension.x],
+            label: 'x'
+        }]
+    }]
+  };
   
 
   constructor() {
     super();
-
     this.graphDiv = document.createElement('div');
+    this.graphDiv.classList.add("graphDiv");
     this.node.appendChild(this.graphDiv);
-
     this.serverSettings = ServerConnection.makeSettings();
-
-    // this.plotLayout = {
-    //   width: 700,
-    //   height: 700,
-    //   xaxis: { title: 'x' },
-    //   yaxis: { title: 'y' },
-    // } as Layout;
 
     // temporary hard coding
     const fpath = 'datasets/laguna_del_maule_miller.h5';
@@ -74,6 +86,7 @@ export default class Slicer extends Widget {
 
     this.plotNewDataset(fpath);
     }
+
 
   /*
   * Generates the default plot-view for the given
@@ -96,57 +109,13 @@ export default class Slicer extends Widget {
       colorscale: 'Viridis'
     } as PlotData];
 
-    const nSteps = data.axis.normal.length;
-    const steps = this.sliderSteps(nSteps);
-    // Slice index slider
-    const sliders = [{
-        pad: {t: 30},
-        currentvalue: {
-          xanchor: "right",
-          prefix: `${this.normalAxis} =  ${data.axis.normal[this.sliceIndex]}`,
-          font: {
-            color: '#888',
-            size: 20
-          }
-        },
-        steps: steps,
-     }] as Partial<Slider>[]
-
-    // Dropdown buttons
-    const updatemenus = [{
-        y: 0.8,
-        yanchor: 'top',
-        buttons: [{
-            method: 'restyle',
-            args: ['normalAxis', Dimension.z],
-            label: 'xy'
-        }, {
-            method: 'restyle',
-            args: ['normalAxis', Dimension.y],
-            label: 'xz'
-        }, {
-            method: 'restyle',
-            args: ['normalAxis', Dimension.x],
-            label: 'yz'
-        }]
-    }];
-
+    const layoutUpdate = this.layoutUpdate(data);
     const plotLayout = {
-      width: 700,
-      height: 700,
-      xaxis: { title: 'x' },
-      yaxis: { title: 'y' },
-      // sliders: sliders,
-      // updatemenus: updatemenus
+      ...this.layoutBase,
+      ...layoutUpdate,
     } as Layout;
 
-    plotLayout.sliders = sliders;
-    plotLayout.updatemenus = updatemenus;
-
-    // this.plotLayout.sliders = sliders;
-    // this.plotLayout.updatemenus = updatemenus;
-
-    this.plot = await Plotly.newPlot(this.graphDiv, plotData, plotLayout);
+    this.plot = await Plotly.newPlot(this.graphDiv, plotData, plotLayout, {displaylogo: false});
 
     // Define behavior for sliderchange event
     this.plot.on('plotly_sliderchange', (data: any) => {
@@ -162,23 +131,22 @@ export default class Slicer extends Widget {
     });
   }
 
+
   private async updateSliceIndex(sliceIndex: number) {
     this.sliceIndex = sliceIndex;
-    // const params: IContentsParameters = {
-    //   fpath: this.fpath,
-    //   uri: "model",
-    //   select: this.selectString(sliceIndex)
-    // }
     const sliceData = await this.getSliceData();
     const update = {
       z: [sliceData] // The data array we want to update must be wrapped in an outer array
     };
-    Plotly.restyle(this.graphDiv, update);
+    const layoutUpdate = {
+      title: `${this.normalAxis} = ${this.normalAxisData[this.sliceIndex]}`
+    }
+    Plotly.update(this.graphDiv, update, layoutUpdate);
   }
+
 
   private async updateNormalAxis(normalAxis: Dimension) {
     this.normalAxis = normalAxis;
-    // this.sliceIndex = 0;
     // Display yz plane
     if (normalAxis === Dimension.x) {
       this.horizontalAxis = Dimension.y;
@@ -194,58 +162,30 @@ export default class Slicer extends Widget {
       this.horizontalAxis = Dimension.x;
       this.verticalAxis = Dimension.y;
     }
-    // this.data = await this.getPlotData();
-    // this.plotLayout.sliders[0].steps = await this.sliderSteps();
-    let data = await this.getPlotData();
 
-    const nSteps = data.axis.normal.length;
-    let steps = this.sliderSteps(nSteps);
-
+    const data = await this.getPlotData();
     const dataUpdate = {
       z: [data.slice],
       x: [data.axis.horizontal],
       y: [data.axis.vertical]
     }
-    const layoutUpdate = {
-      sliders: [{
-        steps: steps
-      }]
-    }
+
+    const layoutUpdate = this.layoutUpdate(data);
     Plotly.update(this.graphDiv, dataUpdate, layoutUpdate);
   }
 
+
   private async getPlotData(): Promise<SlicerPlotData> {
-    // console.log("ENTERED GETDATA");
-    // const hParams: IContentsParameters = {
-    //   fpath: this.fpath,
-    //   uri: this.horizontalAxis,
-    // }
-
-    // const vParams: IContentsParameters = {
-    //   fpath: this.fpath,
-    //   uri: this.verticalAxis,
-    // }
-
-    // need a try...catch block here
-    // const hData = await hdfDataRequest(hParams, this.serverSettings);
-    // const vData = await hdfDataRequest(vParams, this.serverSettings);
     const axisData = await this.getAxisData();
     const sliceData = await this.getSliceData();
-
-    // Need to transpose data if slicing through x or y dimensions
-
-    // const data = {
-    //   hData: hData,
-    //   vData: vData,
-    //   sliceData: sliceData
-    // };
     return {
       axis: axisData,
       slice: sliceData
     } as SlicerPlotData;
   } 
 
-  private async getAxisData(): Promise<AxisData> {
+
+  private async getAxisData(): Promise<SlicerAxisData> {
     const hParams: IContentsParameters = {
       fpath: this.fpath,
       uri: this.horizontalAxis,
@@ -265,15 +205,15 @@ export default class Slicer extends Widget {
     const verticalAxisData = await hdfDataRequest(vParams, this.serverSettings);
     const normalAxisData = await hdfDataRequest(nParams, this.serverSettings);
 
+    // Save the normalAxisData so its value can be displayed above the plot
+    this.normalAxisData = normalAxisData;
+
     return {
       horizontal: horizontalAxisData,
       vertical: verticalAxisData,
       normal: normalAxisData
-    } as AxisData;
+    } as SlicerAxisData;
   }
-
-
-
 
 
   private async getSliceData(): Promise<number[][]> {
@@ -291,15 +231,20 @@ export default class Slicer extends Widget {
     })
   }
 
-  private sliderSteps(nSteps: number): Partial<SliderStep>[] {
-    // const paramsContents: IContentsParameters = {
-    //   fpath: this.fpath,
-    //   // temp hard-coding
-    //   uri: this.normalAxis
-    // }
-    // // try...catch block needed here
-    // const meta = await hdfContentsRequest(paramsContents, this.serverSettings);
-    // const nSteps = meta.content.shape[0];
+
+  private layoutUpdate(data: SlicerPlotData): Partial<Layout> {
+    const sliders = this.sliders(data);
+    return {
+      title: `${this.normalAxis} = ${this.normalAxisData[this.sliceIndex]}`,
+      xaxis: { title: `${this.horizontalAxis}`, automargin: true },
+      yaxis: { title: `${this.verticalAxis}`, automargin: true },
+      sliders: sliders,
+    } as Partial<Layout>
+  }
+
+
+  private sliders(data: SlicerPlotData): Partial<Slider>[] {
+    const nSteps = data.axis.normal.length;
     let steps = [];
     for (let i = 0; i < nSteps; i++) {
       let step = {
@@ -309,8 +254,22 @@ export default class Slicer extends Widget {
        } as Partial<SliderStep>
        steps.push(step);
     }
-    return steps;
+    const sliders = [{
+        pad: {t: 60},
+        currentvalue: {
+          visible: false,
+          xanchor: 'right',
+          prefix: `${this.normalAxis} = `,
+          font: {
+            color: '#888',
+            size: 20
+          }
+        },
+        steps: steps,
+     }] as Partial<Slider>[];
+    return sliders;
   }
+
 
   private selectString(sliceIndex: number): string {
     if (this.normalAxis === Dimension.x) {
@@ -322,12 +281,9 @@ export default class Slicer extends Widget {
     return `[:,:,${sliceIndex}]`;    
   }
 
-  // private transpose(data: number[][]) {
 
-  // }
+  private transpose(data: number[][]): number[][] {
+    return data[0].map((_, i: number) => data.map((row: number[]) => row[i]));
+  }
 
-private transpose = (m: any) => m[0].map((x: any,i: any) => m.map((x: any) => x[i]))
-  // private sliders(): Partial<Slider>[] {
-  //   return undefined;
-  // }
 }
