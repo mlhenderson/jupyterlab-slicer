@@ -36,8 +36,9 @@ export default class Slicer extends Widget {
   // private uri: string;
   private hAxis: Dimension;
   private vAxis: Dimension;
-  private sliceDim: Dimension;
-  // private sliceIndex: number;
+  // private sliceAxis: Dimension;
+  private sliceAxis: Dimension;
+  private sliceIndex: number;
   // private data: PlotData[];
   // private plotLayout: Layout;
   
@@ -57,12 +58,12 @@ export default class Slicer extends Widget {
     //   yaxis: { title: 'y' },
     // } as Layout;
 
-  // temporary hard coding
-  const fpath = 'datasets/laguna_del_maule_miller.h5';
-  // end temporary
+    // temporary hard coding
+    const fpath = 'datasets/laguna_del_maule_miller.h5';
+    // end temporary
 
-  this.plotNewDataset(fpath);
-  }
+    this.plotNewDataset(fpath);
+    }
 
   /*
   * Generates the default plot-view for the given
@@ -73,11 +74,12 @@ export default class Slicer extends Widget {
     // Initialize defaults
     this.hAxis = Dimension.x;
     this.vAxis = Dimension.y;
-    this.sliceDim = Dimension.z;
+    this.sliceAxis = Dimension.z;
+    this.sliceIndex = 0;
 
     let data = await this.getPlotData();
     const plotData = [{
-      z: data.targetData,
+      z: data.sliceData,
       x: data.hData,
       y: data.vData,
       type: 'heatmap',
@@ -90,7 +92,7 @@ export default class Slicer extends Widget {
         pad: {t: 30},
         currentvalue: {
           xanchor: "right",
-          prefix: `${this.sliceDim}-index: `,
+          prefix: `${this.sliceAxis}-index: `,
           font: {
             color: '#888',
             size: 20
@@ -105,15 +107,15 @@ export default class Slicer extends Widget {
         yanchor: 'top',
         buttons: [{
             method: 'restyle',
-            args: ['sliceDim', Dimension.z],
+            args: ['sliceAxis', Dimension.z],
             label: 'xy'
         }, {
             method: 'restyle',
-            args: ['sliceDim', Dimension.y],
+            args: ['sliceAxis', Dimension.y],
             label: 'xz'
         }, {
             method: 'restyle',
-            args: ['sliceDim', Dimension.x],
+            args: ['sliceAxis', Dimension.x],
             label: 'yz'
         }]
     }];
@@ -142,37 +144,37 @@ export default class Slicer extends Widget {
 
     // Define behavior for dropdown change event
     this.plot.on('plotly_restyle', (data: any) => {
-      const sliceDim = data[0].sliceDim;
-      if (sliceDim !== undefined) {
-        this.updateSliceDimension(sliceDim);
+      const sliceAxis = data[0].sliceAxis;
+      if (sliceAxis !== undefined) {
+        this.updatesliceAxisension(sliceAxis);
       }
     });
   }
 
   private async updateSliceIndex(sliceIndex: number) {
-    // this.sliceIndex = sliceIndex;
-    const dataParams: IContentsParameters = {
-      fpath: this.fpath,
-      uri: "model",
-      select: this.selectString(sliceIndex)
-    }
-    const targetData = await hdfDataRequest(dataParams, this.serverSettings);
+    this.sliceIndex = sliceIndex;
+    // const dataParams: IContentsParameters = {
+    //   fpath: this.fpath,
+    //   uri: "model",
+    //   select: this.selectString(sliceIndex)
+    // }
+    const sliceData = await this.getSliceData();
     const update = {
-      z: [targetData] // The data array we want to update must be wrapped in an outer array
+      z: [sliceData] // The data array we want to update must be wrapped in an outer array
     };
     Plotly.restyle(this.graphDiv, update);
   }
 
-  private async updateSliceDimension(sliceDim: Dimension) {
-    this.sliceDim = sliceDim;
+  private async updatesliceAxisension(sliceAxis: Dimension) {
+    this.sliceAxis = sliceAxis;
     // this.sliceIndex = 0;
     // Display yz plane
-    if (sliceDim === Dimension.x) {
+    if (sliceAxis === Dimension.x) {
       this.hAxis = Dimension.y;
       this.vAxis = Dimension.z;
     }
     // Display xz plane
-    else if (sliceDim === Dimension.y) {
+    else if (sliceAxis === Dimension.y) {
       this.hAxis = Dimension.x;
       this.vAxis = Dimension.z;
     }
@@ -187,7 +189,7 @@ export default class Slicer extends Widget {
     let steps = await this.getSliderSteps();
 
     const dataUpdate = {
-      z: [data.targetData],
+      z: [data.sliceData],
       x: [data.hData],
       y: [data.vData]
     }
@@ -211,30 +213,64 @@ export default class Slicer extends Widget {
       uri: this.vAxis,
     }
 
-    const dataParams: IContentsParameters = {
-      fpath: this.fpath,
-      uri: "model",
-      select: this.selectString(0)
-    }
-
     // need a try...catch block here
     const hData = await hdfDataRequest(hParams, this.serverSettings);
     const vData = await hdfDataRequest(vParams, this.serverSettings);
-    const targetData = await hdfDataRequest(dataParams, this.serverSettings);
+    const sliceData = await this.getSliceData();
+
+    // Need to transpose data if slicing through x or y dimensions
 
     const data = {
       hData: hData,
       vData: vData,
-      targetData: targetData,
+      sliceData: sliceData
     };
     return data;
+  }
+
+  private async getAxisData(): Promise<object> {
+    const hParams: IContentsParameters = {
+      fpath: this.fpath,
+      uri: this.hAxis,
+    }
+
+    const vParams: IContentsParameters = {
+      fpath: this.fpath,
+      uri: this.vAxis,
+    }
+
+    const sliceParams: IContentsParameters = {
+      fpath: this.fpath,
+      uri: this.sliceAxis,
+    }
+
+    const hAxisData = await hdfDataRequest(hParams, this.serverSettings);
+    const vAxisData = await hdfDataRequest(vParams, this.serverSettings);
+    const sliceAxisData = await hdfDataRequest(sliceParams, this.serverSettings);
+  }
+
+
+
+  private async getSliceData(): Promise<number[][]> {
+    const dataParams: IContentsParameters = {
+      fpath: this.fpath,
+      uri: "model",
+      select: this.selectString(this.sliceIndex)
+    }
+    return hdfDataRequest(dataParams, this.serverSettings).then(sliceData => {
+      if (this.sliceAxis === Dimension.z) {
+        return sliceData;
+      }
+      // Need to transpose data if slicing through x or y dimensions
+      return this.transpose(sliceData);
+    })
   }
 
   private async getSliderSteps() {
     const paramsContents: IContentsParameters = {
       fpath: this.fpath,
       // temp hard-coding
-      uri: this.sliceDim
+      uri: this.sliceAxis
     }
     // try...catch block needed here
     const meta = await hdfContentsRequest(paramsContents, this.serverSettings);
@@ -252,15 +288,20 @@ export default class Slicer extends Widget {
   }
 
   private selectString(sliceIndex: number): string {
-    if (this.sliceDim === Dimension.x) {
+    if (this.sliceAxis === Dimension.x) {
       return `[${sliceIndex},:,:]`;
     }
-    if (this.sliceDim === Dimension.y) {
+    if (this.sliceAxis === Dimension.y) {
       return `[:,${sliceIndex},:]`;
     }
     return `[:,:,${sliceIndex}]`;    
   }
 
+  // private transpose(data: number[][]) {
+
+  // }
+
+private transpose = (m: any) => m[0].map((x: any,i: any) => m.map((x: any) => x[i]))
   // private sliders(): Partial<Slider>[] {
   //   return undefined;
   // }
