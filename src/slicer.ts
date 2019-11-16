@@ -1,5 +1,4 @@
 import * as Plotly from "plotly.js"
-// import * as JSON5 from "json5"
 
 import {
   Widget
@@ -17,7 +16,7 @@ import {
 
 import { 
   hdfDataRequest, 
-  hdfContentsRequest, 
+  // hdfContentsRequest, 
   IContentsParameters 
 } from './hdf';
 
@@ -27,6 +26,17 @@ enum Dimension {
   z = 'z'
 };
 
+interface AxisData {
+  horizontal: number[];
+  vertical: number[];
+  normal: number[];
+};
+
+interface SlicerPlotData {
+  axis: AxisData;
+  slice: number[][];
+}
+
 export default class Slicer extends Widget {
   private readonly graphDiv: HTMLDivElement;
   private plot: PlotlyHTMLElement;
@@ -34,10 +44,10 @@ export default class Slicer extends Widget {
   // relative filepath of the dataset that is currently displayed
   private fpath: string;
   // private uri: string;
-  private hAxis: Dimension;
-  private vAxis: Dimension;
-  // private sliceAxis: Dimension;
-  private sliceAxis: Dimension;
+  private horizontalAxis: Dimension;
+  private verticalAxis: Dimension;
+  // private normalAxis: Dimension;
+  private normalAxis: Dimension;
   private sliceIndex: number;
   // private data: PlotData[];
   // private plotLayout: Layout;
@@ -72,27 +82,28 @@ export default class Slicer extends Widget {
   private async plotNewDataset(fpath: string) {
     this.fpath = fpath;
     // Initialize defaults
-    this.hAxis = Dimension.x;
-    this.vAxis = Dimension.y;
-    this.sliceAxis = Dimension.z;
+    this.horizontalAxis = Dimension.x;
+    this.verticalAxis = Dimension.y;
+    this.normalAxis = Dimension.z;
     this.sliceIndex = 0;
 
     let data = await this.getPlotData();
     const plotData = [{
-      z: data.sliceData,
-      x: data.hData,
-      y: data.vData,
+      z: data.slice,
+      x: data.axis.horizontal,
+      y: data.axis.vertical,
       type: 'heatmap',
       colorscale: 'Viridis'
     } as PlotData];
 
-    const steps = await this.getSliderSteps();
+    const nSteps = data.axis.normal.length;
+    const steps = this.sliderSteps(nSteps);
     // Slice index slider
     const sliders = [{
         pad: {t: 30},
         currentvalue: {
           xanchor: "right",
-          prefix: `${this.sliceAxis}-index: `,
+          prefix: `${this.normalAxis} =  ${data.axis.normal[this.sliceIndex]}`,
           font: {
             color: '#888',
             size: 20
@@ -107,15 +118,15 @@ export default class Slicer extends Widget {
         yanchor: 'top',
         buttons: [{
             method: 'restyle',
-            args: ['sliceAxis', Dimension.z],
+            args: ['normalAxis', Dimension.z],
             label: 'xy'
         }, {
             method: 'restyle',
-            args: ['sliceAxis', Dimension.y],
+            args: ['normalAxis', Dimension.y],
             label: 'xz'
         }, {
             method: 'restyle',
-            args: ['sliceAxis', Dimension.x],
+            args: ['normalAxis', Dimension.x],
             label: 'yz'
         }]
     }];
@@ -144,16 +155,16 @@ export default class Slicer extends Widget {
 
     // Define behavior for dropdown change event
     this.plot.on('plotly_restyle', (data: any) => {
-      const sliceAxis = data[0].sliceAxis;
-      if (sliceAxis !== undefined) {
-        this.updatesliceAxisension(sliceAxis);
+      const normalAxis = data[0].normalAxis;
+      if (normalAxis !== undefined) {
+        this.updateNormalAxis(normalAxis);
       }
     });
   }
 
   private async updateSliceIndex(sliceIndex: number) {
     this.sliceIndex = sliceIndex;
-    // const dataParams: IContentsParameters = {
+    // const params: IContentsParameters = {
     //   fpath: this.fpath,
     //   uri: "model",
     //   select: this.selectString(sliceIndex)
@@ -165,33 +176,35 @@ export default class Slicer extends Widget {
     Plotly.restyle(this.graphDiv, update);
   }
 
-  private async updatesliceAxisension(sliceAxis: Dimension) {
-    this.sliceAxis = sliceAxis;
+  private async updateNormalAxis(normalAxis: Dimension) {
+    this.normalAxis = normalAxis;
     // this.sliceIndex = 0;
     // Display yz plane
-    if (sliceAxis === Dimension.x) {
-      this.hAxis = Dimension.y;
-      this.vAxis = Dimension.z;
+    if (normalAxis === Dimension.x) {
+      this.horizontalAxis = Dimension.y;
+      this.verticalAxis = Dimension.z;
     }
     // Display xz plane
-    else if (sliceAxis === Dimension.y) {
-      this.hAxis = Dimension.x;
-      this.vAxis = Dimension.z;
+    else if (normalAxis === Dimension.y) {
+      this.horizontalAxis = Dimension.x;
+      this.verticalAxis = Dimension.z;
     }
     // Display xy plane
     else {
-      this.hAxis = Dimension.x;
-      this.vAxis = Dimension.y;
+      this.horizontalAxis = Dimension.x;
+      this.verticalAxis = Dimension.y;
     }
     // this.data = await this.getPlotData();
-    // this.plotLayout.sliders[0].steps = await this.getSliderSteps();
+    // this.plotLayout.sliders[0].steps = await this.sliderSteps();
     let data = await this.getPlotData();
-    let steps = await this.getSliderSteps();
+
+    const nSteps = data.axis.normal.length;
+    let steps = this.sliderSteps(nSteps);
 
     const dataUpdate = {
-      z: [data.sliceData],
-      x: [data.hData],
-      y: [data.vData]
+      z: [data.slice],
+      x: [data.axis.horizontal],
+      y: [data.axis.vertical]
     }
     const layoutUpdate = {
       sliders: [{
@@ -201,64 +214,76 @@ export default class Slicer extends Widget {
     Plotly.update(this.graphDiv, dataUpdate, layoutUpdate);
   }
 
-  private async getPlotData(): Promise<any> {
-    console.log("ENTERED GETDATA");
-    const hParams: IContentsParameters = {
-      fpath: this.fpath,
-      uri: this.hAxis,
-    }
+  private async getPlotData(): Promise<SlicerPlotData> {
+    // console.log("ENTERED GETDATA");
+    // const hParams: IContentsParameters = {
+    //   fpath: this.fpath,
+    //   uri: this.horizontalAxis,
+    // }
 
-    const vParams: IContentsParameters = {
-      fpath: this.fpath,
-      uri: this.vAxis,
-    }
+    // const vParams: IContentsParameters = {
+    //   fpath: this.fpath,
+    //   uri: this.verticalAxis,
+    // }
 
     // need a try...catch block here
-    const hData = await hdfDataRequest(hParams, this.serverSettings);
-    const vData = await hdfDataRequest(vParams, this.serverSettings);
+    // const hData = await hdfDataRequest(hParams, this.serverSettings);
+    // const vData = await hdfDataRequest(vParams, this.serverSettings);
+    const axisData = await this.getAxisData();
     const sliceData = await this.getSliceData();
 
     // Need to transpose data if slicing through x or y dimensions
 
-    const data = {
-      hData: hData,
-      vData: vData,
-      sliceData: sliceData
-    };
-    return data;
-  }
+    // const data = {
+    //   hData: hData,
+    //   vData: vData,
+    //   sliceData: sliceData
+    // };
+    return {
+      axis: axisData,
+      slice: sliceData
+    } as SlicerPlotData;
+  } 
 
-  private async getAxisData(): Promise<object> {
+  private async getAxisData(): Promise<AxisData> {
     const hParams: IContentsParameters = {
       fpath: this.fpath,
-      uri: this.hAxis,
+      uri: this.horizontalAxis,
     }
 
     const vParams: IContentsParameters = {
       fpath: this.fpath,
-      uri: this.vAxis,
+      uri: this.verticalAxis,
     }
 
-    const sliceParams: IContentsParameters = {
+    const nParams: IContentsParameters = {
       fpath: this.fpath,
-      uri: this.sliceAxis,
+      uri: this.normalAxis,
     }
 
-    const hAxisData = await hdfDataRequest(hParams, this.serverSettings);
-    const vAxisData = await hdfDataRequest(vParams, this.serverSettings);
-    const sliceAxisData = await hdfDataRequest(sliceParams, this.serverSettings);
+    const horizontalAxisData = await hdfDataRequest(hParams, this.serverSettings);
+    const verticalAxisData = await hdfDataRequest(vParams, this.serverSettings);
+    const normalAxisData = await hdfDataRequest(nParams, this.serverSettings);
+
+    return {
+      horizontal: horizontalAxisData,
+      vertical: verticalAxisData,
+      normal: normalAxisData
+    } as AxisData;
   }
 
 
 
+
+
   private async getSliceData(): Promise<number[][]> {
-    const dataParams: IContentsParameters = {
+    const params: IContentsParameters = {
       fpath: this.fpath,
       uri: "model",
       select: this.selectString(this.sliceIndex)
     }
-    return hdfDataRequest(dataParams, this.serverSettings).then(sliceData => {
-      if (this.sliceAxis === Dimension.z) {
+    return hdfDataRequest(params, this.serverSettings).then(sliceData => {
+      if (this.normalAxis === Dimension.z) {
         return sliceData;
       }
       // Need to transpose data if slicing through x or y dimensions
@@ -266,15 +291,15 @@ export default class Slicer extends Widget {
     })
   }
 
-  private async getSliderSteps() {
-    const paramsContents: IContentsParameters = {
-      fpath: this.fpath,
-      // temp hard-coding
-      uri: this.sliceAxis
-    }
-    // try...catch block needed here
-    const meta = await hdfContentsRequest(paramsContents, this.serverSettings);
-    const nSteps = meta.content.shape[0];
+  private sliderSteps(nSteps: number): Partial<SliderStep>[] {
+    // const paramsContents: IContentsParameters = {
+    //   fpath: this.fpath,
+    //   // temp hard-coding
+    //   uri: this.normalAxis
+    // }
+    // // try...catch block needed here
+    // const meta = await hdfContentsRequest(paramsContents, this.serverSettings);
+    // const nSteps = meta.content.shape[0];
     let steps = [];
     for (let i = 0; i < nSteps; i++) {
       let step = {
@@ -288,10 +313,10 @@ export default class Slicer extends Widget {
   }
 
   private selectString(sliceIndex: number): string {
-    if (this.sliceAxis === Dimension.x) {
+    if (this.normalAxis === Dimension.x) {
       return `[${sliceIndex},:,:]`;
     }
-    if (this.sliceAxis === Dimension.y) {
+    if (this.normalAxis === Dimension.y) {
       return `[:,${sliceIndex},:]`;
     }
     return `[:,:,${sliceIndex}]`;    
