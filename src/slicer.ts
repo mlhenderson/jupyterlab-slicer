@@ -17,7 +17,7 @@ import {
 import { 
   hdfDataRequest, 
   // hdfContentsRequest, 
-  IContentsParameters 
+  RequestParameters 
 } from './hdf';
 
 enum Dimension {
@@ -35,7 +35,9 @@ interface SlicerAxisData {
 interface SlicerPlotData {
   axis: SlicerAxisData;
   slice: number[][];
-}
+};
+
+const TARGET_DATASET_NAME = 'model';
 
 export default class Slicer extends Widget {
   private readonly graphDiv: HTMLDivElement;
@@ -147,6 +149,7 @@ export default class Slicer extends Widget {
 
   private async updateNormalAxis(normalAxis: Dimension) {
     this.normalAxis = normalAxis;
+    this.sliceIndex = 0;
     // Display yz plane
     if (normalAxis === Dimension.x) {
       this.horizontalAxis = Dimension.y;
@@ -186,17 +189,17 @@ export default class Slicer extends Widget {
 
 
   private async getAxisData(): Promise<SlicerAxisData> {
-    const hParams: IContentsParameters = {
+    const hParams: RequestParameters = {
       fpath: this.fpath,
       uri: this.horizontalAxis,
     }
 
-    const vParams: IContentsParameters = {
+    const vParams: RequestParameters = {
       fpath: this.fpath,
       uri: this.verticalAxis,
     }
 
-    const nParams: IContentsParameters = {
+    const nParams: RequestParameters = {
       fpath: this.fpath,
       uri: this.normalAxis,
     }
@@ -217,9 +220,9 @@ export default class Slicer extends Widget {
 
 
   private async getSliceData(): Promise<number[][]> {
-    const params: IContentsParameters = {
+    const params: RequestParameters = {
       fpath: this.fpath,
-      uri: "model",
+      uri: TARGET_DATASET_NAME,
       select: this.selectString(this.sliceIndex)
     }
     return hdfDataRequest(params, this.serverSettings).then(sliceData => {
