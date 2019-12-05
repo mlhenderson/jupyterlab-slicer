@@ -83,7 +83,7 @@ export default class Slicer extends Widget {
     this.serverSettings = ServerConnection.makeSettings();
 
     // temporary hard coding
-    const fpath = 'datasets/laguna_del_maule_miller.h5';
+    const fpath = 'test_datasets/laguna_del_maule_miller.h5';
     // end temporary
 
     this.plotNewDataset(fpath);

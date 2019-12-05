@@ -1,6 +1,6 @@
-# jupyterlab-slicex
+# jupyterlab-slicer
 
-slice
+Temporary install instructions
 
 
 ## Prerequisites
@@ -9,17 +9,17 @@ slice
 * NodeJS
 
 ## Installation
+Navigate to the repo directory, and execute the following commands for a demo
+install. 
 
-```bash
-conda create -n jupyterlab-slicer jupyterlab nodejs
-```
-
+Install the HDF5 server extension
 ```bash
 pip install .
 ```
 
+Install the JupyterLab Slicer extension
 ```bash
-jupyter labextension install jupyterlab-slicer
+jupyter labextension install .
 ```
 
 ## Development
