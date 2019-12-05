@@ -386,8 +386,8 @@
         "signature": "26f2775ecb1136ea1f33c2fea8ff166fadc0d5011f5c2b1c3aeef75b78f00904"
       },
       "/users/jonhays/documents/work/uda/jupyterlab-slicedup/src/hdf.ts": {
-        "version": "e305d5a9c5a793ac269d539e41a43506add1bfc9c30ec03f9bd80459da4c2669",
-        "signature": "327754747938cf2c880e4c5876890814447c23337739721a301d5b2e2f72373b"
+        "version": "020c49418d9c0873d52f9f9025bc8ad28874f50d0449a46d2646d3ccb5084b19",
+        "signature": "d1ea94445f8ec02bc36541bc820bcabbfab00c52b8da9803f4a43dcaa44e8b21"
       },
       "/users/jonhays/documents/work/uda/jupyterlab-slicedup/node_modules/@jupyterlab/application/lib/tokens.d.ts": {
         "version": "e5ded2422cb91f9048cfad46a37f2e51be0081f024a1c032abf63e8be96a1718",
@@ -746,7 +746,7 @@
         "signature": "24fe092368b57347314b850c552da89b574340ebb2921aeeb1cab1d255da23c3"
       },
       "/users/jonhays/documents/work/uda/jupyterlab-slicedup/src/slicer.ts": {
-        "version": "4e8d2c60f00389bf1cd94b7d2d41bc667232f1cfd2ed39e5ab8fedcbe32fd4b7",
+        "version": "68f2d3fa2a8c7591d9e5026537b02d35f61f4b55323ae1e7aa37721c6c052972",
         "signature": "c26403516c26c8bed519d4e7c01298b29f347cf2d6498487402c40ba35baf8f4"
       },
       "/users/jonhays/documents/work/uda/jupyterlab-slicedup/src/index.ts": {
