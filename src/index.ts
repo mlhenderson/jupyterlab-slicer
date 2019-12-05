@@ -10,8 +10,6 @@ import Slicer from "./slicer";
 
 
 function activateSlicerPlugin(app: JupyterFrontEnd, palette: ICommandPalette) {
-  console.log('JupyterLab extension jupyterlab-sliced is activated!');
-
   // create a Slicer Widget
   const content = new Slicer();
   const widget = new MainAreaWidget({content});
@@ -21,7 +19,7 @@ function activateSlicerPlugin(app: JupyterFrontEnd, palette: ICommandPalette) {
 
   const command: string = 'slicer:open';
   app.commands.addCommand(command, {
-    label: 'Slicer-typescript',
+    label: 'HDF5 Slice Viewer',
     execute: () => {
       if (!widget.isAttached) {
         app.shell.add(widget, 'main')

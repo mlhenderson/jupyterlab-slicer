@@ -6,11 +6,20 @@ slice
 ## Prerequisites
 
 * JupyterLab
+* NodeJS
 
 ## Installation
 
 ```bash
-jupyter labextension install jupyterlab-slicex
+conda create -n jupyterlab-slicer jupyterlab nodejs
+```
+
+```bash
+pip install .
+```
+
+```bash
+jupyter labextension install jupyterlab-slicer
 ```
 
 ## Development
@@ -18,15 +27,15 @@ jupyter labextension install jupyterlab-slicex
 For a development install (requires npm version 4 or later), do the following in the repository directory:
 
 ```bash
-npm install
-npm run build
+jlpm install
+jlpm run build
 jupyter labextension link .
 ```
 
 To rebuild the package and the JupyterLab app:
 
 ```bash
-npm run build
+jlpm run build
 jupyter lab build
 ```
 
