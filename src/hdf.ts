@@ -4,6 +4,7 @@ import { URLExt } from "@jupyterlab/coreutils";
 
 import { ServerConnection } from "@jupyterlab/services";
 
+export const HDF_MIME_TYPE = "application/x-hdf5";
 
 /**
  * Send a parameterized request to the `hdf/contents` api, and

@@ -6,7 +6,9 @@ import {
   ICommandPalette, MainAreaWidget
 } from '@jupyterlab/apputils';
 
-import Slicer from "./slicer";
+import { HDF_MIME_TYPE } from "./hdf";
+
+import { Slicer } from "./slicer";
 
 
 function activateSlicerPlugin(app: JupyterFrontEnd, palette: ICommandPalette) {
