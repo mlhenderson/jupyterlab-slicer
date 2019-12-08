@@ -4,3 +4,7 @@
     width: 75%;
     padding: 20px;
 }
+
+.slicer-icon {
+    background-image: url('icons/graphic_eq-24px.svg')
+}

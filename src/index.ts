@@ -1,51 +1,68 @@
 import {
-  JupyterFrontEnd, JupyterFrontEndPlugin
+  JupyterFrontEnd, JupyterFrontEndPlugin, ILayoutRestorer
 } from '@jupyterlab/application';
 
 import {
-  ICommandPalette, MainAreaWidget
+  MainAreaWidget, WidgetTracker
 } from '@jupyterlab/apputils';
 
-import {
-  IFileBrowserFactory
-} from '@jupyterlab/filebrowser';
+import { IFileBrowserFactory } from '@jupyterlab/filebrowser';
+
+import { PathExt } from '@jupyterlab/coreutils';
 
 import Slicer from "./slicer";
 
 
-function activateSlicerPlugin(app: JupyterFrontEnd, factory: IFileBrowserFactory, palette: ICommandPalette) {
-  const { tracker } = factory;
+function hasId(widget: MainAreaWidget<Slicer>, id: string) {
+  return widget.id === id;
+}
 
-
-
-  // create a Slicer Widget
-  const content = new Slicer();
-  const widget = new MainAreaWidget({content});
-  widget.id = 'slicer-jupyterlab';
-  widget.title.label = 'Slicer';
-  widget.title.closable = true;
+function activateSlicerPlugin(app: JupyterFrontEnd, factory: IFileBrowserFactory, restorer: ILayoutRestorer) {
+  const fileTracker = factory.tracker;
+  let widget: MainAreaWidget<Slicer>;
 
   const openSlicer: string = 'slicer:open';
   app.commands.addCommand(openSlicer, {
-    label: 'HDF5 Slice Viewer',
-    execute: (args) => {
-      console.log("PATH: " + tracker.currentWidget.selectedItems().next().path)
-      
-      
-      console.log("ARGS: " + JSON.stringify(args));
-      if (!widget.isAttached) {
-        app.shell.add(widget, 'main')
+    label: 'Open Slice Viewer',
+    iconClass: 'jp-MaterialIcon slicer-icon',
+    execute: () => {
+      // Get path of selected file from the file browser's tracker
+      let fpath = fileTracker.currentWidget.selectedItems().next().path;
+      let id = `slicer-${fpath}`;
+
+      // Find the widget if it has already been rendered
+      widget = slicerTracker.find((w: MainAreaWidget<Slicer>) => hasId(w, id))
+      if (!widget) {
+        const content = new Slicer(fpath);
+        widget = new MainAreaWidget({content})
+        widget.id = id;
+        widget.title.label = `${PathExt.basename(fpath)}`;
+        widget.title.closable = true;
+        slicerTracker.add(widget);
+        widget.content.update();
       }
-      content.update();
+      if (!widget.isAttached) {
+          app.shell.add(widget, 'main');
+        }
       app.shell.activateById(widget.id);
     }
   });
-  palette.addItem({command: openSlicer, category: 'UDA'});
+
+  // Add the command to the file browser's context menu
   app.contextMenu.addItem({
     command: openSlicer,
     selector: '.jp-DirListing-item',
-    // args: { path: widget.context.path }
-  })
+  });
+
+  // Track and store slicer state across page reloads
+  let slicerTracker = new WidgetTracker<MainAreaWidget<Slicer>>({
+    namespace: 'slicer'
+  });
+  // TODO: figure out why this isn't working
+  // restorer.restore(slicerTracker, {
+  //   command: openSlicer,
+  //   name: () => 'slicer'
+  // });
 }
 
 /**
@@ -54,7 +71,7 @@ function activateSlicerPlugin(app: JupyterFrontEnd, factory: IFileBrowserFactory
 const slicerExtension: JupyterFrontEndPlugin<void> = {
   id: 'jupyterlab-sliced',
   autoStart: true,
-  requires: [IFileBrowserFactory, ICommandPalette],
+  requires: [IFileBrowserFactory, ILayoutRestorer],
   activate: activateSlicerPlugin
 };
 

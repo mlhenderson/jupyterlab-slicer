@@ -1522,11 +1522,11 @@
         "signature": "24fe092368b57347314b850c552da89b574340ebb2921aeeb1cab1d255da23c3"
       },
       "/users/jonhays/documents/work/uda/jupyterlab-slicer/src/slicer.ts": {
-        "version": "1caba3e372a8bfe1beb63652543e6c5d938091d3da7669062e6a28db58f636a4",
-        "signature": "c26403516c26c8bed519d4e7c01298b29f347cf2d6498487402c40ba35baf8f4"
+        "version": "0d9f6d56a3f67c9822740f64b3409b1b3864df2f34dfbd951029b0bfd9c205d6",
+        "signature": "344d16ffd823e9b429c669da763c0428538c6d47ee672e75f6b09883d9c89262"
       },
       "/users/jonhays/documents/work/uda/jupyterlab-slicer/src/index.ts": {
-        "version": "7ee70ac3e6dbfc17faeb74449ab36eedafc01e778947d492d980876128feba3f",
+        "version": "3e5b37f00b2294c85458a1604da87a0be100159c7338920a3f584db7631c3758",
         "signature": "1386351d712ebd1ec54c6b22fe056697ec2a9091e706da4eb67c61f349d0d79e"
       }
     },
@@ -3371,6 +3371,7 @@
         "/users/jonhays/documents/work/uda/jupyterlab-slicer/node_modules/@jupyterlab/application/lib/index.d.ts",
         "/users/jonhays/documents/work/uda/jupyterlab-slicer/node_modules/@jupyterlab/apputils/lib/index.d.ts",
         "/users/jonhays/documents/work/uda/jupyterlab-slicer/node_modules/@jupyterlab/filebrowser/lib/index.d.ts",
+        "/users/jonhays/documents/work/uda/jupyterlab-slicer/node_modules/@jupyterlab/coreutils/lib/index.d.ts",
         "/users/jonhays/documents/work/uda/jupyterlab-slicer/src/slicer.ts"
       ]
     },
