@@ -33,6 +33,7 @@
   "dependencies": {
     "@jupyterlab/application": "^1.0.0",
     "@jupyterlab/coreutils": "^3.2.0",
+    "@jupyterlab/filebrowser": "^1.2.1",
     "@jupyterlab/services": "^4.2.0",
     "@types/node": "^12.12.5",
     "@types/plotly.js": "^1.44.15",

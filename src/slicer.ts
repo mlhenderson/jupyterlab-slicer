@@ -77,6 +77,8 @@ export default class Slicer extends Widget {
 
   constructor() {
     super();
+    // console.log("PATH: " + this.context.path)
+
     this.graphDiv = document.createElement('div');
     this.graphDiv.classList.add("graphDiv");
     this.node.appendChild(this.graphDiv);
