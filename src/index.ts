@@ -38,6 +38,7 @@ function activateSlicerPlugin(app: JupyterFrontEnd, factory: IFileBrowserFactory
         widget.id = id;
         widget.title.label = `${PathExt.basename(fpath)}`;
         widget.title.closable = true;
+        widget.title.icon = 'slicer-icon';
         slicerTracker.add(widget);
         widget.content.update();
       }
@@ -51,7 +52,7 @@ function activateSlicerPlugin(app: JupyterFrontEnd, factory: IFileBrowserFactory
   // Add the command to the file browser's context menu
   app.contextMenu.addItem({
     command: openSlicer,
-    selector: '.jp-DirListing-item',
+    selector: '.jp-DirListing-item[data-isdir="false"]',
   });
 
   // Track and store slicer state across page reloads
