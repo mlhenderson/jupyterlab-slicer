@@ -19,24 +19,8 @@ import {
   RequestParameters 
 } from './hdf';
 
-enum Dimension {
-  x = 'x',
-  y = 'y',
-  z = 'z'
-};
-
-interface SlicerAxisData {
-  horizontal: number[];
-  vertical: number[];
-  normal: number[];
-};
-
-interface SlicerPlotData {
-  axis: SlicerAxisData;
-  slice: number[][];
-};
-
 const TARGET_DATASET_NAME = 'model';
+
 
 export default class Slicer extends Widget {
 
@@ -292,3 +276,20 @@ export default class Slicer extends Widget {
   private normalAxisData: number[];
 
 }
+
+enum Dimension {
+  x = 'x',
+  y = 'y',
+  z = 'z'
+};
+
+interface SlicerAxisData {
+  horizontal: number[];
+  vertical: number[];
+  normal: number[];
+};
+
+interface SlicerPlotData {
+  axis: SlicerAxisData;
+  slice: number[][];
+};
