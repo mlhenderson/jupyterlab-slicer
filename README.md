@@ -4,6 +4,7 @@ A JupyterLab plugin for rendering 2-dimensional orthographic views of 3-dimensio
 * `y`, y-axis data
 * `z`, z-axis data
 * `model`, the target data
+
 The 3D target data can be explored using a dropdown menu to select the normal axis, and a slider to select the current slice index. 
 
 ## Prerequisites
