@@ -39,7 +39,8 @@
     "@types/node": "^12.12.5",
     "@types/plotly.js": "^1.44.15",
     "node": "^12.13.0",
-    "plotly.js": "^1.51.0"
+    "plotly.js": "^1.51.0",
+    "static-eval": "^2.0.0"
   },
   "devDependencies": {
     "rimraf": "^2.6.1",
