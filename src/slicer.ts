@@ -1,8 +1,8 @@
 import * as Plotly from "plotly.js"
 
-import {
-  Widget
-} from '@phosphor/widgets';
+import { Widget } from '@phosphor/widgets';
+
+// import { Message } from '@phosphor/messaging';
 
 import { ServerConnection } from "@jupyterlab/services";
 
@@ -16,78 +16,29 @@ import {
 
 import { 
   hdfDataRequest, 
-  // hdfContentsRequest, 
   RequestParameters 
 } from './hdf';
 
-enum Dimension {
-  x = 'x',
-  y = 'y',
-  z = 'z'
-};
-
-interface SlicerAxisData {
-  horizontal: number[];
-  vertical: number[];
-  normal: number[];
-};
-
-interface SlicerPlotData {
-  axis: SlicerAxisData;
-  slice: number[][];
-};
-
 const TARGET_DATASET_NAME = 'model';
 
+
 export default class Slicer extends Widget {
-  private readonly graphDiv: HTMLDivElement;
-  private plot: PlotlyHTMLElement;
-  private serverSettings: ServerConnection.ISettings;
-  private fpath: string;
-  private horizontalAxis: Dimension;
-  private verticalAxis: Dimension;
-  private normalAxis: Dimension;
-  private sliceIndex: number;
-  private normalAxisData: number[];
 
-  private readonly layoutBase: Partial<Layout> = {
-    width: 700,
-    height: 600,
-    // Dropdown buttons
-    updatemenus: [{
-        y: 0.8,
-        yanchor: 'bottom',
-        pad: {r: 60}, 
-        buttons: [{
-            method: 'restyle',
-            args: ['normalAxis', Dimension.z],
-            label: 'z'
-        }, {
-            method: 'restyle',
-            args: ['normalAxis', Dimension.y],
-            label: 'y'
-        }, {
-            method: 'restyle',
-            args: ['normalAxis', Dimension.x],
-            label: 'x'
-        }]
-    }]
-  };
-  
-
-  constructor() {
+  constructor(fpath: string) {
     super();
+    this.fpath = fpath;
     this.graphDiv = document.createElement('div');
     this.graphDiv.classList.add("graphDiv");
     this.node.appendChild(this.graphDiv);
     this.serverSettings = ServerConnection.makeSettings();
-
-    // temporary hard coding
-    const fpath = 'test_datasets/laguna_del_maule_miller.h5';
-    // end temporary
-
     this.plotNewDataset(fpath);
-    }
+  }
+
+  // TODO: determine whether or not this should be used 
+  // instead of calling in constructor
+  // async onUpdateRequest(msg: Message): Promise<void> {
+  //   this.plotNewDataset(this.fpath);
+  // }
 
 
   /*
@@ -289,4 +240,56 @@ export default class Slicer extends Widget {
     return data[0].map((_, i: number) => data.map((row: number[]) => row[i]));
   }
 
+
+  private readonly layoutBase: Partial<Layout> = {
+    width: 700,
+    height: 600,
+    // Dropdown buttons
+    updatemenus: [{
+        y: 0.8,
+        yanchor: 'bottom',
+        pad: {r: 60}, 
+        buttons: [{
+            method: 'restyle',
+            args: ['normalAxis', Dimension.z],
+            label: 'z'
+        }, {
+            method: 'restyle',
+            args: ['normalAxis', Dimension.y],
+            label: 'y'
+        }, {
+            method: 'restyle',
+            args: ['normalAxis', Dimension.x],
+            label: 'x'
+        }]
+    }]
+  }; 
+
+  private readonly graphDiv: HTMLDivElement;
+  private plot: PlotlyHTMLElement;
+  private serverSettings: ServerConnection.ISettings;
+  private fpath: string;
+  private horizontalAxis: Dimension;
+  private verticalAxis: Dimension;
+  private normalAxis: Dimension;
+  private sliceIndex: number;
+  private normalAxisData: number[];
+
 }
+
+enum Dimension {
+  x = 'x',
+  y = 'y',
+  z = 'z'
+};
+
+interface SlicerAxisData {
+  horizontal: number[];
+  vertical: number[];
+  normal: number[];
+};
+
+interface SlicerPlotData {
+  axis: SlicerAxisData;
+  slice: number[][];
+};
