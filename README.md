@@ -22,6 +22,7 @@ pip install .
 
 Install the JupyterLab Slicer extension
 ```bash
+jlpm install
 jupyter labextension install .
 ```
 
