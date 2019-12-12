@@ -68,7 +68,7 @@ export default class Slicer extends Widget {
       ...layoutUpdate,
     } as Layout;
 
-    this.plot = await Plotly.newPlot(this.graphDiv, plotData, plotLayout, {displaylogo: false});
+    this.plot = await Plotly.newPlot(this.graphDiv, plotData, plotLayout, {displaylogo: false, responsive: true});
 
     // Define behavior for sliderchange event
     this.plot.on('plotly_sliderchange', (data: any) => {
