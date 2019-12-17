@@ -12,12 +12,15 @@ import { PathExt } from '@jupyterlab/coreutils';
 
 import Slicer from "./slicer";
 
-
+/*
 function hasId(widget: MainAreaWidget<Slicer>, id: string) {
   return widget.id === id;
 }
+*/
 
-function activateSlicerPlugin(app: JupyterFrontEnd, factory: IFileBrowserFactory, restorer: ILayoutRestorer) {
+function activate(app: JupyterFrontEnd, factory: IFileBrowserFactory, restorer: ILayoutRestorer) {
+  console.log("activate");
+
   const fileTracker = factory.tracker;
   let widget: MainAreaWidget<Slicer>;
 
@@ -26,25 +29,34 @@ function activateSlicerPlugin(app: JupyterFrontEnd, factory: IFileBrowserFactory
     label: 'Open Slice Viewer',
     iconClass: 'jp-MaterialIcon slicer-icon',
     execute: () => {
+
+      console.log("app.commands.addCommand");
+
       // Get path of selected file from the file browser's tracker
       let fpath = fileTracker.currentWidget.selectedItems().next().path;
-      let id = `slicer-${fpath}`;
+      let slicerid = `slicer-${fpath}`;
 
       // Find the widget if it has already been rendered
-      widget = slicerTracker.find((w: MainAreaWidget<Slicer>) => hasId(w, id))
+      //widget = slicerTracker.find((w: MainAreaWidget<Slicer>) => hasId(w, slicerid));
       if (!widget) {
         const content = new Slicer(fpath);
-        widget = new MainAreaWidget({content})
-        widget.id = id;
+        widget = new MainAreaWidget({content});
+        widget.id = slicerid;
         widget.title.label = `${PathExt.basename(fpath)}`;
         widget.title.closable = true;
         widget.title.icon = 'slicer-icon';
         slicerTracker.add(widget);
-        widget.content.update();
+        //widget.content.update();
+      }
+      if (!slicerTracker.has(widget)) {
+        slicerTracker.add(widget);
       }
       if (!widget.isAttached) {
           app.shell.add(widget, 'main');
-        }
+      }
+      widget.content.update();
+
+      // Activate the widget
       app.shell.activateById(widget.id);
     }
   });
@@ -56,14 +68,19 @@ function activateSlicerPlugin(app: JupyterFrontEnd, factory: IFileBrowserFactory
   });
 
   // Track and store slicer state across page reloads
-  let slicerTracker = new WidgetTracker<MainAreaWidget<Slicer>>({
+  const slicerTracker = new WidgetTracker<MainAreaWidget<Slicer>>({
     namespace: 'slicer'
   });
+
+  /*
   // TODO: figure out why this isn't working
-  // restorer.restore(slicerTracker, {
-  //   command: openSlicer,
-  //   name: () => 'slicer'
-  // });
+  if (restorer) {
+    void restorer.restore(slicerTracker, {
+      command: openSlicer,
+      name: () => widget.title.label
+    });
+  }
+  */
 }
 
 /**
@@ -73,7 +90,7 @@ const slicerExtension: JupyterFrontEndPlugin<void> = {
   id: 'jupyterlab-sliced',
   autoStart: true,
   requires: [IFileBrowserFactory, ILayoutRestorer],
-  activate: activateSlicerPlugin
+  activate: activate
 };
 
 export default slicerExtension;

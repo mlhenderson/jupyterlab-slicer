@@ -1,8 +1,18 @@
 
-.graphDiv {
-    margin: auto;
-    width: 75%;
+.outerGraphDiv {
     padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: calc(100% - 100px);
+    min-height: 100px;
+    min-width: 100px;
+}
+
+.graphDiv {
+    margin: 0 auto;
+    height: 100%;
+    width: 100%;
 }
 
 .slicer-icon {
