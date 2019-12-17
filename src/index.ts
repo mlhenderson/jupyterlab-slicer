@@ -12,11 +12,11 @@ import { PathExt } from '@jupyterlab/coreutils';
 
 import Slicer from "./slicer";
 
-/*
+
 function hasId(widget: MainAreaWidget<Slicer>, id: string) {
   return widget.id === id;
 }
-*/
+
 
 function activate(app: JupyterFrontEnd, factory: IFileBrowserFactory, restorer: ILayoutRestorer) {
   console.log("activate");
@@ -37,7 +37,7 @@ function activate(app: JupyterFrontEnd, factory: IFileBrowserFactory, restorer: 
       let slicerid = `slicer-${fpath}`;
 
       // Find the widget if it has already been rendered
-      //widget = slicerTracker.find((w: MainAreaWidget<Slicer>) => hasId(w, slicerid));
+      widget = slicerTracker.find((w: MainAreaWidget<Slicer>) => hasId(w, slicerid));
       if (!widget) {
         const content = new Slicer(fpath);
         widget = new MainAreaWidget({content});
@@ -48,6 +48,10 @@ function activate(app: JupyterFrontEnd, factory: IFileBrowserFactory, restorer: 
         slicerTracker.add(widget);
         //widget.content.update();
       }
+      else {
+        return;
+      }
+
       if (!slicerTracker.has(widget)) {
         slicerTracker.add(widget);
       }
