@@ -6,11 +6,11 @@ import { Message } from '@phosphor/messaging';
 
 import { ServerConnection } from "@jupyterlab/services";
 
-import { 
+import {
   PlotlyHTMLElement,
   Layout, 
-  PlotData, 
-  SliderStep, 
+  PlotData,
+  SliderStep,
   Slider 
 } from 'plotly.js';
 
@@ -39,6 +39,8 @@ export default class Slicer extends Widget {
     this.serverSettings = ServerConnection.makeSettings();
     this.sliceData = null;
 
+    console.log(Plotly);
+
     // enumerate colorscales
     this.colorScales = [];
     let c;
@@ -63,15 +65,15 @@ export default class Slicer extends Widget {
         buttons: [{
           method: 'restyle',
           args: ['normalAxis', Dimension.z],
-          label: 'z'
+          label: 'Z'
         }, {
           method: 'restyle',
           args: ['normalAxis', Dimension.y],
-          label: 'y'
+          label: 'Y'
         }, {
           method: 'restyle',
           args: ['normalAxis', Dimension.x],
-          label: 'x'
+          label: 'X'
         }]
       }, {
         y: 1,
@@ -82,7 +84,8 @@ export default class Slicer extends Widget {
       ]
     };
 
-    this.plotNewDataset();
+    this.plot = null;
+    //this.plotNewDataset();
   }
 
   /*
@@ -111,21 +114,14 @@ export default class Slicer extends Widget {
   }
   */
 
+/*
   protected async onUpdateRequest(msg: Message): Promise<void> {
     super.onUpdateRequest(msg);
     console.log(["onUpdateRequest", msg, this.fpath]);
 
     this._render_new();
-
-    /*
-    if (this.graphDiv.classList.contains('js-plotly-plot')) {
-      this._render_update();
-    }
-    else {
-      this._render_new();
-    }
-    */
   }
+*/
 
   protected async onBeforeAttach(msg: Message): Promise<void> {
     super.onBeforeAttach(msg);
@@ -147,6 +143,8 @@ export default class Slicer extends Widget {
   }
 
   private async _render_new(): Promise<void> {
+    console.log("_render_new");
+      
     // Initialize defaults
     this.horizontalAxis = Dimension.x;
     this.verticalAxis = Dimension.y;
@@ -190,7 +188,7 @@ export default class Slicer extends Widget {
 
   }
 
-  /*
+  
   private async _render_update(): Promise<void> {
     const data = await this.getPlotData();
     const dataUpdate = {
@@ -201,28 +199,37 @@ export default class Slicer extends Widget {
     const layoutUpdate = this.layoutUpdate(data);
     Plotly.update(this.graphDiv, dataUpdate, layoutUpdate);
   }
-  */
+  
 
   // update the plot when a resize event happens
   protected async onResize(msg: Widget.ResizeMessage): Promise<void> {
     console.log("onResize");
-    this._render_new();
+
+    if (this.plot) {
+      this._render_update();
+    }
+    else {
+      this._render_new();
+    }
   }
 
   public dispose(): void {
+    console.log("dispose");
+    
     if (this.graphDiv) {
       Plotly.purge(this.graphDiv);
     }
   }
 
+  
   /*
   * Generates the default plot-view for the given
   * file: xy-plane at index 0.
   */
-  private async plotNewDataset() {
-    //console.log("plotNewDataset");
-    this._render_new();
-  }
+  //private async plotNewDataset() {
+  //  //console.log("plotNewDataset");
+  //  this._render_new();
+  //}
 
 
   private async updateSliceIndex(sliceIndex: number) {
@@ -322,7 +329,7 @@ export default class Slicer extends Widget {
 
 
   private async getSliceData(): Promise<number[][]> {
-    //console.log(["getSliceData", this.sliceIndex]);
+    console.log(["getSliceData", this.sliceIndex]);
 
     const params: RequestParameters = {
       fpath: this.fpath,
@@ -331,11 +338,13 @@ export default class Slicer extends Widget {
     };
     return hdfDataRequest(params, this.serverSettings).then(sliceData => {
       if (this.normalAxis === Dimension.z) {
-        return sliceData;
+        this.sliceData = sliceData;
       }
-      // Need to transpose data if slicing through x or y dimensions
-      this.sliceData = this.transpose(sliceData);
-      return this.transpose(this.sliceData);
+      else {
+        // Need to transpose data if slicing through x or y dimensions
+        this.sliceData = this.transpose(sliceData);
+      }
+      return this.sliceData;
     })
   }
 
@@ -346,8 +355,22 @@ export default class Slicer extends Widget {
     const sliders = this.sliders(data);
     return {
       title: `${this.normalAxis} = ${this.normalAxisData[this.sliceIndex]}`,
-      xaxis: { title: `${this.horizontalAxis}`, automargin: true },
-      yaxis: { title: `${this.verticalAxis}`, automargin: true },
+      xaxis: { 
+        title: `${this.horizontalAxis}`,
+        font: {
+          family: 'Courier New, monospace',
+          size: 30
+        },
+        automargin: true
+      },
+      yaxis: { 
+        title: `${this.verticalAxis}`,
+        font: {
+          family: 'Courier New, monospace',
+          size: 30
+        },
+        automargin: true
+      },
       sliders: sliders,
     } as Partial<Layout>
   }
@@ -373,6 +396,7 @@ export default class Slicer extends Widget {
           xanchor: 'right',
           prefix: `${this.normalAxis} = `,
           font: {
+            family: 'Courier New, monospace',
             color: '#888',
             size: 20
           }
@@ -397,8 +421,6 @@ export default class Slicer extends Widget {
 
 
   private transpose(data: number[][]): number[][] {
-    //console.log("transpose");
-
     return data[0].map((_, i: number) => data.map((row: number[]) => row[i]));
   }
 
